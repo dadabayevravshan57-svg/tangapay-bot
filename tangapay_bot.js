@@ -291,3 +291,66 @@ bot.on("callback_query",async q=>{
 
 console.log("✅ TangaPay bot ishga tushdi!");
 
+// ── HTTP API Server ────────────────────────────────────────────────────────
+const http = require("http");
+
+const API_SECRET = "tangapay2024secret"; // ilova bilan bot o'rtasidagi kalit
+
+const server = http.createServer((req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Content-Type", "application/json");
+
+  if(req.method === "OPTIONS") { res.writeHead(200); res.end(); return; }
+
+  const url = new URL(req.url, `http://localhost`);
+  const token = req.headers["authorization"] || url.searchParams.get("token");
+
+  // Token tekshirish
+  if(token !== API_SECRET) {
+    res.writeHead(401);
+    res.end(JSON.stringify({error:"Unauthorized"}));
+    return;
+  }
+
+  // GET /user?tgId=123456 — foydalanuvchi ma'lumotlari
+  if(req.method === "GET" && url.pathname === "/user") {
+    const tgId = parseInt(url.searchParams.get("tgId"));
+    const u = users[tgId];
+    if(!u) { res.writeHead(404); res.end(JSON.stringify({error:"User not found"})); return; }
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      id: u.id,
+      name: u.name,
+      phone: u.phone,
+      coins: u.coins,
+      balance: u.coins * COIN_PRICE,
+      dailyIncome: u.coins * DAILY_EARN,
+      totalReturn: u.coins * COIN_PRICE * RETURN_MULT,
+    }));
+    return;
+  }
+
+  // GET /stats — umumiy statistika
+  if(req.method === "GET" && url.pathname === "/stats") {
+    const all = Object.values(users);
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      totalUsers: all.length,
+      totalCoins: all.reduce((s,x) => s+x.coins, 0),
+      pendingPayments: Object.keys(pending).length,
+    }));
+    return;
+  }
+
+  res.writeHead(404);
+  res.end(JSON.stringify({error:"Not found"}));
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`✅ API server port ${PORT} da ishga tushdi!`);
+});
+
+
