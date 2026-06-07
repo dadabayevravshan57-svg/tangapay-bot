@@ -1,0 +1,11 @@
+{
+  "name": "tangapay-bot",
+  "version": "1.0.0",
+  "main": "tangapay_bot.js",
+  "scripts": {
+    "start": "node tangapay_bot.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0"
+  }
+}
